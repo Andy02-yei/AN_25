@@ -1,0 +1,148 @@
+---
+title: "Preliminares tarea 3"
+author: "Andrea Anaeli Zamora Pérez"
+date: "2025-05-06"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 1
+    theme: cerulean
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(tidyverse)
+library(pracma)
+library(plotly)
+library(MASS)
+#library(ISLR2)
+library(car)
+library(corrplot)
+library(rgl)
+library(scatterPlotMatrix)
+
+
+library(openxlsx)
+library(readxl)
+library(writexl)
+library(quantmod)
+library(xts)
+library(zoo)
+library(dygraphs)
+knitr::knit_hooks$set(webgl = hook_webgl)
+```
+
+
+# Indicadores económicos INEGI
+
+```{r}
+inegi_ie <- read_xls("C:/Users/Andy/Documents/Análisis numérico/BIE_BIE20250506122246.xls", range = cell_rows(2:389))
+```
+
+
+```{r}
+names(inegi_ie) <- c("Periodo", "IGAC", "Actividades_primarias","Actividad_industrial", "Actividades_terciarias", "Precios_Consumidor","Importaciones_totales","Importaciones_no_petroleras", "Exportaciones_totales", "Exportaciones_petroleras","Exportaciones_no_petroleras"
+)
+```
+
+
+```{r}
+inegi_ie$Periodo <- ym(inegi_ie$Periodo)
+write.xlsx(inegi_ie, "./inegi_data.xls")
+glimpse(inegi_ie)
+```
+
+
+```{r}
+Produccion <- names(inegi_ie)[2:4]
+Produccion
+Precios <- names(inegi_ie)[5]
+Precios
+Sector_externo <- names(inegi_ie)[6:10]
+Sector_externo
+```
+
+
+Por ejemplo, a continuación seleccionamos los indicadores de Producción, Precios y Sector externo
+
+
+```{r}
+inegi_subconjunto <- inegi_ie |> dplyr::select(Periodo, all_of(c(Produccion, Precios, Sector_externo)))
+glimpse(inegi_subconjunto)
+```
+
+Contamos valores ausentes (NA).
+
+```{r}
+colSums(is.na(inegi_subconjunto))
+```
+
+Lo guardamos en un archivo xlsx para usarlo en la Tarea 3.
+
+```{r}
+write.xlsx(inegi_subconjunto, "./inegi_subdata.xlsx")
+#La siguiente función lee los datos seleccionados:
+#inegi_subconjunto <- read.xlsx("./inegi_subdata.xlsx", detectDates = TRUE)
+```
+
+
+
+
+# Valores financieros
+
+Utilizamos el package `quantmod` para descargar valores financieros desde [Yahoo Finance](https://finance.yahoo.com/). Ejemplo NVDA.
+
+
+```{r}
+begin_date ="2020-01-01"
+end_date = "2025-03-03"
+getSymbols("NVDA", src = "yahoo", from = begin_date, to = end_date, periodicity = "daily")
+
+chartSeries(NVDA)
+```
+
+Descargamos los valores de 10 compañías (verificar que todas tengan valores en el periodo escogido), nótese que en cada caso se almacena como un objeto del tipo `xts` - `zoo` (series temporales).
+
+
+```{r}
+tickers <- c("AAPL", "AMZN", "META", "GOOG", "NVDA", "AVGO", "JPM", "MSFT", "TSLA", "LLY")
+getSymbols(tickers, src = "yahoo", from = begin_date, to = end_date, periodicity = "daily")
+class(AAPL)
+
+```
+
+
+A continuación se filtran los valores de cierre y se guarda como `precio_cierre.RDS` (este es un objeto del tipo xts-zoo, no es un data frame)
+
+```{r}
+lista <- lapply(tickers, function(x) Cl(get(x)))
+precio_cierre <- do.call(merge,lista)
+
+dygraph(precio_cierre)
+saveRDS(precio_cierre, "precio_cierre.RDS")
+# La siguiente función se utilizaría para leer el objeto precio_cierre.RDS
+#precio_cierre <- readRDS("precio_cierre.RDS")
+
+
+
+```
+
+
+
+Ahora convertimos las series de tiempo a un data frame y lo guardamos en un archivo xslx para utilizarlo en la Tarea 3.
+
+
+
+```{r}
+precio_cierre_df <- as.data.frame(precio_cierre)
+precio_cierre_df <- mutate(precio_cierre_df, Fecha= index(precio_cierre), .before = 1)
+glimpse(precio_cierre_df)
+write.xlsx(precio_cierre_df, "precio_cierre_df.xlsx")
+```
+

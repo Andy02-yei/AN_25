@@ -1,0 +1,415 @@
+---
+title: "Tarea 3"
+author: "Andrea Anaeli Zamora Pérez"
+date: "2025-05-06"
+output: html_document
+---
+<style>
+body {
+text-align: justify}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(tidyverse)
+library(pracma)
+library(plotly)
+library(MASS)
+library(ISLR2)
+library(car)
+library(corrplot)
+library(rgl)
+library(scatterPlotMatrix)
+
+
+library(openxlsx)
+library(readxl)
+library(writexl)
+library(quantmod)
+library(xts)
+library(zoo)
+library(dygraphs)
+knitr::knit_hooks$set(webgl = hook_webgl)
+```
+
+```{r}
+inegi_datos <- read_xlsx("C:/Users/Andy/Documents/Análisis numérico/inegi_subdata.xlsx", range = cell_rows(1:388))
+```
+
+
+# Correlación
+
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+data_numeric <- inegi_datos %>% select_if(is.numeric)
+
+corr_matrix <- cor(data_numeric, use="complete.obs")
+
+print("Análisis de correlación:")
+print(corr_matrix)
+
+```
+
+
+# Regresiones lineales simples
+
+##Actividades primarias ~ Indicador Global de Actividad económica
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(IGAC ~ Actividades_primarias, data = inegi_datos)
+
+print("Modelo de regresión lineal")
+summary(modelo)
+```
+
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+ggplot(data = inegi_datos, aes(x = Actividades_primarias, y = IGAC))+geom_point(color = "blue", size = 2)+
+  geom_smooth(method = "lm", formula = y ~ x, color = "red", se = FALSE)+ 
+  labs(
+    title = "Actividades primarias vs Indicador Global de Actividad Económica", x = "Actividades primarias", y = "Indicador Global de Actividad Económica")+
+  theme_bw()
+```
+
+**Observaciones:**
+Aunque es clara relación que existe entre el Indicador Global de Actividad Económica (IGAE) y las actividades primarias, se puede observar una gran dispersión. Esto nos indica que las actividades primarias sí influyen en el IGAE pero no son el único ni el principal motor de crecimiento en México. Esto tiene mucho sentido, pues si vemos la estructura económica que conforma al país, el sector primario es el que menos peso tiene en comparación con la industria y los servicios. 
+
+
+
+##Actividad industrial ~ Indicador Global de Actividad económica
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(IGAC ~ Actividad_industrial, data = inegi_datos)
+
+print("Modelo de regresión lineal")
+summary(modelo)
+```
+
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+ggplot(data = inegi_datos, aes(x = Actividad_industrial, y = IGAC))+geom_point(color = "chocolate", size = 2)+
+  geom_smooth(method = "lm", formula = y ~ x, color = "cyan4", se = FALSE)+ 
+  labs(
+    title = "Actividad industrial vs Indicador Global de Actividad Económica", x = "Actividad industrial", y = "Indicador Global de Actividad Económica")+
+  theme_bw()
+```
+
+
+**Observaciones**
+Esta relación es la esperada, pues la actividad industriales uno de los principales componentes del IGAE. El gráfico nos muestra que la industria puede predecir de manera muy atinada la evolución general de la economía ya que tienen una alta correlación y baja dispersión.
+
+
+
+
+
+##Importaciones totales ~ Precios al consumidor
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(Precios_Consumidor ~ Importaciones_totales, data = inegi_datos)
+
+print("Modelo de regresión lineal")
+summary(modelo)
+```
+
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+ggplot(data = inegi_datos, aes(x = Importaciones_totales, y = Precios_Consumidor))+geom_point(color = "coral2", size = 2)+
+  geom_smooth(method = "lm", formula = y ~ x, color = "azure4", se = FALSE)+ 
+  labs(
+    title = "Importaciones totales vs Precios al consumidor", x = "Importaciones totales", y = "Precios al consumidor")+
+  theme_bw()
+```
+
+
+**Observaciones**
+Esta relación puede deberse a que México depende de importaciones de bienes intermedios o de consumo, asi que, un amunetoen su volumen puede coincidir con aumnetos de precios internos.
+
+
+
+
+
+##Exportaciones totales ~ Precios al consumidor
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(Precios_Consumidor ~ Exportaciones_totales, data = inegi_datos)
+
+print("Modelo de regresión lineal")
+summary(modelo)
+```
+
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+ggplot(data = inegi_datos, aes(x = Exportaciones_totales, y = Precios_Consumidor))+geom_point(color = "darkorange", size = 2)+
+  geom_smooth(method = "lm", formula = y ~ x, color = "darkgreen", se = FALSE)+ 
+  labs(
+    title = "Exportaciones totales vs Precios al consumidor", x = "Exportaciones totales", y = "Precios al consumidor")+
+  theme_bw()
+```
+
+
+**Observaciones**
+Muestra una relación positiva y fuerte, aunque un poco más dispersa que la anterior.
+Esto podría decirnos que cuando aumentan las exportaciones, la oferta interna disminuye o que los ingresos que se generar de la exportaciones pueden generar presion inflacionaria, lo que puede llevar a un aumneto de precio al consumidor.
+
+
+
+
+
+##Exportaciones petroleras ~ Indicador Global de Actividad económica
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(IGAC ~ Exportaciones_petroleras, data = inegi_datos)
+
+print("Modelo de regresión lineal")
+summary(modelo)
+```
+
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+ggplot(data = inegi_datos, aes(x = Exportaciones_petroleras, y = IGAC))+geom_point(color = "cadetblue2", size = 2)+
+  geom_smooth(method = "lm", formula = y ~ x, color = "burlywood", se = FALSE)+ 
+  labs(
+    title = "Exportaciones petroleras vs Indicador Global de Actividad Económica", x = "Exportaciones petroleras", y = "Indicador Global de Actividad Económica")+
+  theme_bw()
+```
+
+
+**Observaciones**
+En este caso podemos notar más variabilidad en los datos, esto puede ser explicado porque, aunque las exportaciones petroleras son importantes, su efecto en la actividad interna depende de muchos factores, como los precios internacionales, políticas o la reinversión de esos ingresos a la economía nacional.
+
+
+
+
+
+
+
+
+# Regresiones lineales multiples
+
+##Indicador Global de Actividad económica ~ Exportaciones totales + Importaciones totales
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(IGAC ~ Exportaciones_totales + Importaciones_totales, data = inegi_datos)
+
+print("Modelo de regresión lineal múltiple")
+summary(modelo)
+```
+
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+scatter3d(IGAC ~ Exportaciones_totales + Importaciones_totales, data = inegi_datos, fit = "linear", residuals = TRUE, bg = "black", axis.scales = TRUE,
+          grid = TRUE, ellipsoid = FALSE)
+```
+
+**Observaciones**
+
+
+
+
+
+
+##Precios al consumidor ~ Exportaciones petroleras + Importaciones no petroleras
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(Precios_Consumidor ~ Exportaciones_petroleras + Importaciones_no_petroleras, data = inegi_datos)
+
+print("Modelo de regresión lineal múltiple")
+summary(modelo)
+```
+
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+scatter3d(Precios_Consumidor ~ Exportaciones_petroleras + Importaciones_no_petroleras, data = inegi_datos, fit = "linear", residuals = TRUE, bg = "black", axis.scales = TRUE,
+          grid = TRUE, ellipsoid = FALSE)
+```
+
+
+**Observaciones**
+
+
+
+
+
+##Precios al consumidor ~ Actividades primarias + Actividad industrial
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(Precios_Consumidor ~ Actividades_primarias + Actividad_industrial, data = inegi_datos)
+
+print("Modelo de regresión lineal múltiple")
+summary(modelo)
+```
+
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+scatter3d(Precios_Consumidor ~ Actividades_primarias + Actividad_industrial, data = inegi_datos, fit = "linear", residuals = TRUE, bg = "black", axis.scales = TRUE,
+          grid = TRUE, ellipsoid = FALSE)
+```
+
+
+**Observaciones**
+
+
+
+
+
+##Exportaciones totales ~ Actividades primarias + Actividad industrial
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(Exportaciones_totales ~ Actividades_primarias + Actividad_industrial, data = inegi_datos)
+
+print("Modelo de regresión lineal múltiple")
+summary(modelo)
+```
+
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+scatter3d(Exportaciones_totales ~ Actividades_primarias + Actividad_industrial, data = inegi_datos, fit = "linear", residuals = TRUE, bg = "black", axis.scales = TRUE,
+          grid = TRUE, ellipsoid = FALSE)
+```
+
+
+**Observaciones**
+
+
+
+
+
+
+##Actividad industrial ~ Exportaciones petroleras + Precios al Consumidor
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(Actividad_industrial ~ Exportaciones_petroleras + Precios_Consumidor, data = inegi_datos)
+
+print("Modelo de regresión lineal múltiple")
+summary(modelo)
+```
+
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+scatter3d(IGAC ~ Exportaciones_totales + Importaciones_totales, data = inegi_datos, fit = "linear", residuals = TRUE, bg = "black", axis.scales = TRUE,
+          grid = TRUE, ellipsoid = FALSE)
+```
+
+
+**Observaciones**
+
+
+
+
+
+
+
+
+# Sector financiero
+
+```{r}
+data_cierre <- read_xlsx("C:/Users/Andy/Documents/Análisis numérico/precio_cierre_df.xlsx")
+```
+
+
+## Análisis de Correlación 
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+data_numeric <- data_cierre %>% select_if(is.numeric)
+
+corr_matrix <- cor(data_numeric, use= "complete.obs")
+
+print("Análisis de Correlación:")
+print(corr_matrix)
+```
+
+```{r, echo=FALSE}
+corrplot(corr_matrix)
+```
+
+
+
+
+
+##Regresiones lineales simples
+
+## Apple ~ Nvidia
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(AAPL.Close ~ NVDA.Close, data = data_cierre) 
+
+print("Modelo de Regresión Lineal:")
+summary(modelo)
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(data = data_cierre, aes(x = NVDA.Close, y = AAPL.Close))+
+  geom_point(color = "chartreuse", size = 2)+
+  geom_smooth(method = "lm", formula = y ~ x, color = "darkkhaki", se=FALSE)+
+  labs(
+    title= "Apple vs Nvidia", x = "Nvidia", y="Apple")+
+  theme_bw()
+```
+
+
+
+
+
+## Google ~ Meta 
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(GOOG.Close ~ META.Close, data = data_cierre) 
+
+print("Modelo de Regresión Lineal:")
+summary(modelo)
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(data = data_cierre, aes(x = META.Close, y = GOOG.Close))+
+  geom_point(color = "indianred", size = 2)+
+  geom_smooth(method = "lm", formula = y ~ x, color = "navy", se=FALSE)+
+  labs(
+    title= "GOOGLE vs META", x = "META", y="GOOGLE")+
+  theme_bw()
+```
+
+
+## Amazon ~ Tesla 
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(AMZN.Close ~ TSLA.Close, data = data_cierre) 
+
+print("Modelo de Regresión Lineal:")
+summary(modelo)
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(data = data_cierre, aes(x = TSLA.Close, y = AMZN.Close))+
+  geom_point(color = "plum", size = 2)+
+  geom_smooth(method = "lm", formula = y ~ x, color = "palegreen4", se=FALSE)+
+  labs(
+    title= "Amazon vs Tesla", x = "Tesla", y="Amazon")+
+  theme_bw()
+```
+
+
+
+
+# Regresiones Lineales Múltiples
+
+## Broadcome ~ JPMorgan Chase + Google
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(AVGO.Close ~ JPM.Close + GOOG.Close, data = data_cierre)
+print("Modelo de Regresión Lineal Múltiple")
+summary(modelo)
+```
+
+```{r webgl=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+scatter3d(AVGO.Close ~ JPM.Close + GOOG.Close, data = data_cierre, fit="linear", residuals=TRUE, bg="white", axis.scales=TRUE, 
+  grid=TRUE, ellipsoid=FALSE)
+```
+
+
+## META ~ Eli Lilly + Microsoft 
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(META.Close ~ LLY.Close + MSFT.Close, data = data_cierre)
+print("Modelo de Regresión Lineal Múltiple")
+summary(modelo)
+```
+
+```{r webgl=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+scatter3d(META.Close ~ LLY.Close + MSFT.Close, data = data_cierre, fit="linear", residuals=TRUE, bg="white", axis.scales=TRUE, 
+  grid=TRUE, ellipsoid=FALSE)
+```
+
+
+## Apple ~ Amazon + Nvidia 
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+modelo <- lm(AAPL.Close ~ AMZN.Close + NVDA.Close, data = data_cierre)
+print("Modelo de Regresión Lineal Múltiple")
+summary(modelo)
+```
+
+```{r webgl=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+scatter3d(AAPL.Close ~ AMZN.Close + NVDA.Close, data = data_cierre, fit="linear", residuals=TRUE, bg="white", axis.scales=TRUE, 
+  grid=TRUE, ellipsoid=FALSE)
+```
